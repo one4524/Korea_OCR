@@ -108,15 +108,13 @@ def get_detector(trained_model, cuda=True):
 def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_text=0.4, cuda=True, poly=False,
                 refine_net=None):
     result = []
-    image = imgproc.loadImage(image)
+    # image = imgproc.loadImage(image)
 
     bboxes, polys = craft_net(detector, image, text_threshold, link_threshold, low_text,
                               cuda, poly, refine_net)
 
     for i, box in enumerate(polys):
-        single_img_result = []
         poly = np.array(box).astype(np.int32).reshape((-1))
-        single_img_result.append(poly)
 
         min_x = min(poly[0::2])
         max_x = max(poly[0::2])
@@ -129,7 +127,7 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
         img_trim = image[min_y:min_y + img_h, min_x:min_x + img_w]
         cv2.imwrite('./image/{}.jpg'.format(str(i)), img_trim)
 
-        result.append(single_img_result)
+        result.append(poly)
 
     return result
 
@@ -137,7 +135,7 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
 def get_textbox2(detector, image, text_threshold=0.7, link_threshold=0.4, low_text=0.4, cuda=True, poly=False,
                  refine_net=None):
     result = []
-    image = imgproc.loadImage(image)
+    # image = imgproc.loadImage(image)
 
     bboxes, polys = craft_net(detector, image, text_threshold, link_threshold, low_text,
                               cuda, poly, refine_net)
@@ -151,7 +149,7 @@ def get_textbox2(detector, image, text_threshold=0.7, link_threshold=0.4, low_te
         perspect = cv2.getPerspectiveTransform(poly2, dstQuad)
         img_trim = cv2.warpPerspective(image, perspect, (w, h))
 
-        cv2.imwrite('./image2/{}.jpg'.format(str(i)), img_trim)
+        cv2.imwrite('./image/{}.jpg'.format(str(i)), img_trim)
 
         result.append(poly)
 

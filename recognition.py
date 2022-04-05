@@ -107,5 +107,6 @@ def recognition(opt):
                     confidence_score = pred_max_prob.cumprod(dim=0)[-1]
 
                 print(f'{img_name:25s}\t{pred:15s}\t{confidence_score:0.4f}\n')
-                results.append(f'{img_name:25s}\t{pred:15s}\t{confidence_score:0.4f}\n')
+                results.append(pred)
+
     return results

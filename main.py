@@ -2,13 +2,20 @@
 import string
 import argparse
 
+import cv2
 import torch
 import torch.backends.cudnn as cudnn
 import torch.utils.data
 import file_utils
 
+from preprocessing import imageProcesser
 from recognition import recognition
 from detection import get_detector, get_textbox, get_textbox2
+
+
+def str2bool(v):
+    return v.lower() in ("yes", "y", "true", "t", "1")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -34,6 +41,21 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
+    """ CRAFT argument """
+    parser.add_argument('--trained_model', default='model/craft_mlt_25k.pth', type=str, help='pretrained model')
+    parser.add_argument('--text_threshold', default=0.7, type=float, help='text confidence threshold')
+    parser.add_argument('--low_text', default=0.4, type=float, help='text low-bound score')
+    parser.add_argument('--link_threshold', default=0.4, type=float, help='link confidence threshold')
+    parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda for inference')
+    parser.add_argument('--canvas_size', default=1280, type=int, help='image size for inference')
+    parser.add_argument('--mag_ratio', default=1.5, type=float, help='image magnification ratio')
+    parser.add_argument('--poly', default=False, action='store_true', help='enable polygon type')
+    parser.add_argument('--show_time', default=False, action='store_true', help='show processing time')
+    parser.add_argument('--folder', default='data', type=str, help='folder path to input images')
+    parser.add_argument('--refine', default=False, action='store_true', help='enable link refiner')
+    parser.add_argument('--refiner_model', default='weights/craft_refiner_CTW1500.pth', type=str,
+                        help='pretrained refiner model')
+    parser.add_argument('--original_image', required=True, type=str, help='input image')
 
     opt = parser.parse_args()
 
@@ -47,39 +69,53 @@ if __name__ == '__main__':
     opt.num_gpu = torch.cuda.device_count()
 
     ###########################
-    def str2bool(v):
-        return v.lower() in ("yes", "y", "true", "t", "1")
-
-    parser2 = argparse.ArgumentParser(description='CRAFT Text Detection')
-    parser2.add_argument('--trained_model', default='model/craft_mlt_25k.pth', type=str, help='pretrained model')
-    parser2.add_argument('--text_threshold', default=0.7, type=float, help='text confidence threshold')
-    parser2.add_argument('--low_text', default=0.4, type=float, help='text low-bound score')
-    parser2.add_argument('--link_threshold', default=0.4, type=float, help='link confidence threshold')
-    parser2.add_argument('--cuda', default=True, type=str2bool, help='Use cuda for inference')
-    parser2.add_argument('--canvas_size', default=1280, type=int, help='image size for inference')
-    parser2.add_argument('--mag_ratio', default=1.5, type=float, help='image magnification ratio')
-    parser2.add_argument('--poly', default=False, action='store_true', help='enable polygon type')
-    parser2.add_argument('--show_time', default=False, action='store_true', help='show processing time')
-    parser2.add_argument('--folder', default='data', type=str, help='folder path to input images')
-    parser2.add_argument('--refine', default=False, action='store_true', help='enable link refiner')
-    parser2.add_argument('--refiner_model', default='weights/craft_refiner_CTW1500.pth', type=str,
-                        help='pretrained refiner model')
-
-    args = parser2.parse_args()
 
     # main
     text_boxs = []
 
+    # image preprocesssing
+    image = imageProcesser(opt.original_image)
+
     # detector model
-    detector = get_detector(args.trained_model)
+    detector = get_detector(opt.trained_model)
 
     # get image
-    image_list, _, _ = file_utils.get_files(args.folder)
+    # image_list, _, _ = file_utils.get_files(opt.folder) # 폴더에서 이미지 리스트 가져오는 방법
 
     # get text boxs
-    text_boxs = get_textbox2(detector, image_list[0], args.text_threshold, args.link_threshold, args.low_text, args.cuda, args.poly, None)
+    text_boxs = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text, opt.cuda, opt.poly,
+                            None)
 
+    lines = []
+    Y = 0
+    while Y < len(image[0]):
+        line_text = []
+        i = -1
+        for box in text_boxs:
+            i += 1
+            print(Y)
+            h = box[7] - box[1]
+            if box[7] > Y + h/8 > box[1] and Y > box[1]:
+                line_text.append(i)
+
+            elif len(line_text) != 0 and Y < box[1]:
+                lines.append(line_text)
+                Y = box[1]
+                break
+            elif Y <= box[1]:
+                Y += 1
+                break
+            else:
+                Y += 1
 
     # text recognition
     text = recognition(opt)
 
+    m = ""
+    for line in lines:
+        for l in line:
+            m = m + text[l]
+
+        m = m + "\n"
+
+print(m)

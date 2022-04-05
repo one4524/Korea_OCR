@@ -49,7 +49,6 @@ def resize_aspect_ratio(img, square_size, interpolation, mag_ratio=1):
     target_h, target_w = int(height * ratio), int(width * ratio)
     proc = cv2.resize(img, (target_w, target_h), interpolation = interpolation)
 
-
     # make canvas and paste image
     target_h32, target_w32 = target_h, target_w
     if target_h % 32 != 0:
