@@ -182,6 +182,15 @@ if __name__ == '__main__':
             min_y = min(poly[1::2])
             max_y = max(poly[1::2])
 
+            if min_x < 0:
+                min_x = 0
+            if max_x < 0:
+                max_x = 0
+            if min_y < 0:
+                min_y = 0
+            if max_y < 0:
+                max_y = 0
+
             img_h = max_y - min_y
             img_w = max_x - min_x
 
