@@ -86,36 +86,20 @@ if __name__ == '__main__':
     text_boxs = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text, opt.cuda, opt.poly,
                             None)
 
-    lines = []
-    Y = 0
-    while Y < len(image[0]):
-        line_text = []
-        i = -1
-        for box in text_boxs:
-            i += 1
-            print(Y)
-            h = box[7] - box[1]
-            if box[7] > Y + h/8 > box[1] and Y > box[1]:
-                line_text.append(i)
-
-            elif len(line_text) != 0 and Y < box[1]:
-                lines.append(line_text)
-                Y = box[1]
-                break
-            elif Y <= box[1]:
-                Y += 1
-                break
-            else:
-                Y += 1
-
     # text recognition
     text = recognition(opt)
 
-    m = ""
-    for line in lines:
-        for l in line:
-            m = m + text[l]
+    num = 0
+    str = ""
+    for i, text_line in enumerate(text_boxs):
+        line = []
 
-        m = m + "\n"
+        for j, t in enumerate(text_line):
 
-print(m)
+            line.append(text[num])
+            str += text[num]
+            num += 1
+
+        print(i + 1, "줄 텍스트 : ", str)
+        line.clear()
+        str = ""

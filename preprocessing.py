@@ -83,6 +83,8 @@ def imageProcesser(imagePath):
     orig = image.copy()
     image = imutils.resize(image, height=500)
 
+    return image
+
     # convert image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 

@@ -109,6 +109,9 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
                 refine_net=None):
     result = []
     # image = imgproc.loadImage(image)
+    line = []
+
+    w, h = 200, 64
 
     bboxes, polys = craft_net(detector, image, text_threshold, link_threshold, low_text,
                               cuda, poly, refine_net)
@@ -124,10 +127,58 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
         img_h = max_y - min_y
         img_w = max_x - min_x
 
-        img_trim = image[min_y:min_y + img_h, min_x:min_x + img_w]
-        cv2.imwrite('./image/{}.jpg'.format(str(i)), img_trim)
+        if len(line) == 0:
+            line.append(poly)
+            print("0", poly)
 
-        result.append(poly)
+            continue
+        else:
+            if line[0][1] - img_h / 2 < poly[1] < line[0][1] + img_h / 2:
+
+                print("a", poly)
+
+                j = 0
+                n = len(line)
+
+                for l in line:
+                    if poly[0] < l[0]:
+                        break
+                    else:
+                        j += 1
+
+                print("i=", j, "n=", n)
+                if j == n:
+                    line.append(poly)
+                else:
+                    for a in range(n-1, j-1, -1):
+                        print("len(n)=", len(line))
+                        print("a", a)
+                        line.insert(a+1, line[a])
+                        line[a] = poly
+                        print("len(n)=", len(line))
+
+            else:
+                print("else")
+                result.append(line)
+                line.clear()
+                line.append(poly)
+
+        if i == len(polys)-1:
+            print("end")
+            result.append(line)
+
+    print(result)
+    i=0
+    for lines in result:
+        for b in lines:
+            poly2 = np.array([[b[0], b[1]], [b[2], b[3]], [b[4], b[5]], [b[6], b[7]]],
+                             dtype=np.float32)
+            dstQuad = np.array([[0, 0], [w - 1, 0], [w - 1, h - 1], [0, h - 1]], dtype=np.float32)
+            perspect = cv2.getPerspectiveTransform(poly2, dstQuad)
+            img_trim = cv2.warpPerspective(image, perspect, (w, h))
+
+            cv2.imwrite('./image/{}.jpg'.format(str(i)), img_trim)
+            i += 1
 
     return result
 
@@ -144,7 +195,8 @@ def get_textbox2(detector, image, text_threshold=0.7, link_threshold=0.4, low_te
     for i, box in enumerate(polys):
         poly = np.array(box).astype(np.int32).reshape(-1)
 
-        poly2 = np.array([[poly[0], poly[1]], [poly[2], poly[3]], [poly[4], poly[5]], [poly[6], poly[7]]], dtype=np.float32)
+        poly2 = np.array([[poly[0], poly[1]], [poly[2], poly[3]], [poly[4], poly[5]], [poly[6], poly[7]]],
+                         dtype=np.float32)
         dstQuad = np.array([[0, 0], [w - 1, 0], [w - 1, h - 1], [0, h - 1]], dtype=np.float32)
         perspect = cv2.getPerspectiveTransform(poly2, dstQuad)
         img_trim = cv2.warpPerspective(image, perspect, (w, h))
