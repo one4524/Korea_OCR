@@ -1,7 +1,7 @@
 # This Python file uses the following encoding: utf-8
 import string
 import argparse
-
+from PIL import Image
 import torch
 import torch.backends.cudnn as cudnn
 import torch.utils.data
@@ -72,7 +72,8 @@ def recognition(opt, demo_data):
     # prepare data. two demo images from https://github.com/bgshih/crnn#run-demo
     AlignCollate_demo = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
     # demo_data = RawDataset(root=opt.image_folder, opt=opt)  # use RawDataset
-    demo_data = ListDataset(demo_data)
+    #demo_data = ListDataset(demo_data)
+    demo_data = TensorDataset(demo_data)
     demo_loader = torch.utils.data.DataLoader(
         demo_data, batch_size=opt.batch_size,
         shuffle=False,
