@@ -35,6 +35,20 @@ def levenshtein(s1, s2, debug=False):
     return previous_row[-1]
 
 
+class ListDataset(torch.utils.data.Dataset):
+
+    def __init__(self, image_list):
+        self.image_list = image_list
+        self.nSamples = len(image_list)
+
+    def __len__(self):
+        return self.nSamples
+
+    def __getitem__(self, index):
+        img = self.image_list[index]
+        return Image.fromarray(img, 'L')
+
+
 def recognition(opt, demo_data):
     """ model configuration """
     if 'CTC' in opt.Prediction:
@@ -58,6 +72,7 @@ def recognition(opt, demo_data):
     # prepare data. two demo images from https://github.com/bgshih/crnn#run-demo
     AlignCollate_demo = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
     # demo_data = RawDataset(root=opt.image_folder, opt=opt)  # use RawDataset
+    demo_data = ListDataset(demo_data)
     demo_loader = torch.utils.data.DataLoader(
         demo_data, batch_size=opt.batch_size,
         shuffle=False,
