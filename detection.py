@@ -108,6 +108,7 @@ def get_detector(trained_model, cuda=True):
 def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_text=0.4, cuda=True, poly=False,
                 refine_net=None):
     result = []
+    crop_images = []
     # image = imgproc.loadImage(image)
     line = []
 
@@ -177,10 +178,11 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
             perspect = cv2.getPerspectiveTransform(poly2, dstQuad)
             img_trim = cv2.warpPerspective(image, perspect, (w, h))
 
+            crop_images.append(img_trim)
             cv2.imwrite('./image/{}.jpg'.format(str(i)), img_trim)
             i += 1
 
-    return result
+    return result, crop_images
 
 
 def get_textbox2(detector, image, text_threshold=0.7, link_threshold=0.4, low_text=0.4, cuda=True, poly=False,

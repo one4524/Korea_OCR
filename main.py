@@ -83,14 +83,17 @@ if __name__ == '__main__':
     # image_list, _, _ = file_utils.get_files(opt.folder) # 폴더에서 이미지 리스트 가져오는 방법
 
     # get text boxs
-    text_boxs = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text, opt.cuda, opt.poly,
+    text_boxs, crop_images = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text, opt.cuda, opt.poly,
                             None)
 
     # text recognition
-    text = recognition(opt)
+    text = recognition(opt, crop_images)
 
+    date = ""
+    price = ""
     num = 0
     str = ""
+    sum_text = ['금액', '합계','함계','함게','합게','압계','압게','암계','암게','힙켸','입켸','입케','힙케']
     for i, text_line in enumerate(text_boxs):
         line = []
 
@@ -101,5 +104,12 @@ if __name__ == '__main__':
             num += 1
 
         print(i + 1, "줄 텍스트 : ", str)
+        str = str.strip().strip(':').strip(',').strip('.')
+        for sum in sum_text:
+            if str.find(sum) != -1:
+                str = str.strip(sum).strip('원')
+                price = str
+
+        print(price)
         line.clear()
         str = ""
