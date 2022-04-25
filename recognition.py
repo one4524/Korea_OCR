@@ -49,7 +49,33 @@ class ListDataset(torch.utils.data.Dataset):
         return Image.fromarray(img, 'L')
 
 
-def recognition(opt, demo_data):
+def get_image_list(free_list, img, model_height = 64, sort_output = True):
+    image_list = []
+    maximum_y,maximum_x = img.shape
+
+    max_ratio_hori, max_ratio_free = 1,1
+    for box in free_list:
+        rect = np.array(box, dtype = "float32")
+        transformed_img = four_point_transform(img, rect)
+        ratio = calculate_ratio(transformed_img.shape[1],transformed_img.shape[0])
+        new_width = int(model_height*ratio)
+        if new_width == 0:
+            pass
+        else:
+            crop_img,ratio = compute_ratio_and_resize(transformed_img,transformed_img.shape[1],transformed_img.shape[0],model_height)
+            image_list.append( (box,crop_img) ) # box = [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
+            max_ratio_free = max(ratio, max_ratio_free)
+
+    max_ratio_free = math.ceil(max_ratio_free)
+
+    max_width = math.ceil(max_ratio_free)*model_height
+
+    if sort_output:
+        image_list = sorted(image_list, key=lambda item: item[0][0][1]) # sort by vertical position
+    return image_list, max_width
+
+
+def recognition(opt, image_list):
     """ model configuration """
     if 'CTC' in opt.Prediction:
         converter = CTCLabelConverter(opt.character)
@@ -69,11 +95,12 @@ def recognition(opt, demo_data):
     print('loading pretrained model from %s' % opt.saved_model)
     model.load_state_dict(torch.load(opt.saved_model, map_location=device))
 
+    coord = [item[0] for item in image_list]
+    img_list = [item[1] for item in image_list]
     # prepare data. two demo images from https://github.com/bgshih/crnn#run-demo
     AlignCollate_demo = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
     # demo_data = RawDataset(root=opt.image_folder, opt=opt)  # use RawDataset
-    #demo_data = ListDataset(demo_data)
-    demo_data = TensorDataset(demo_data)
+    demo_data = ListDataset(img_list)
     demo_loader = torch.utils.data.DataLoader(
         demo_data, batch_size=opt.batch_size,
         shuffle=False,
@@ -84,7 +111,7 @@ def recognition(opt, demo_data):
     # predict
     model.eval()
     with torch.no_grad():
-        for image_tensors, image_path_list in demo_loader:
+        for image_tensors in demo_loader:
             batch_size = image_tensors.size(0)
             image = image_tensors.to(device)
             # For max length prediction
@@ -110,7 +137,7 @@ def recognition(opt, demo_data):
             preds_prob = F.softmax(preds, dim=2)
             preds_max_prob, _ = preds_prob.max(dim=2)
 
-            for img_name, pred, pred_max_prob in zip(image_path_list, preds_str, preds_max_prob):
+            for pred, pred_max_prob in zip(preds_str, preds_max_prob):
                 if 'Attn' in opt.Prediction:
                     pred_EOS = pred.find('[s]')
                     pred = pred[:pred_EOS]  # prune after "end of sentence" token ([s])
@@ -122,7 +149,7 @@ def recognition(opt, demo_data):
                 else:
                     confidence_score = pred_max_prob.cumprod(dim=0)[-1]
 
-                print(f'{img_name:25s}\t{pred:15s}\t{confidence_score:0.4f}\n')
+                print(f'\t{pred:15s}\t{confidence_score:0.4f}\n')
                 results.append(pred)
 
     return results

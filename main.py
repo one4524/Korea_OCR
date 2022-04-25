@@ -74,7 +74,7 @@ if __name__ == '__main__':
     text_boxs = []
 
     # image preprocesssing
-    image = imageProcesser(opt.original_image)
+    image, gray = imageProcesser(opt.original_image)
 
     # detector model
     detector = get_detector(opt.trained_model)
@@ -85,6 +85,8 @@ if __name__ == '__main__':
     # get text boxs
     text_boxs, crop_images = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text, opt.cuda, opt.poly,
                             None)
+
+    image_list, max_width = get_image_list(text_boxs, gray, model_height=64)
 
     # text recognition
     text = recognition(opt, crop_images)
@@ -113,3 +115,34 @@ if __name__ == '__main__':
         print(price)
         line.clear()
         str = ""
+
+
+def get_image_list(horizontal_list, img, model_height = 64, sort_output = True):
+    image_list = []
+    maximum_y,maximum_x = img.shape
+
+    max_ratio_hori, max_ratio_free = 1,1
+
+    for box in horizontal_list:
+        x_min = max(0,box[0])
+        x_max = min(box[1],maximum_x)
+        y_min = max(0,box[2])
+        y_max = min(box[3],maximum_y)
+        crop_img = img[y_min : y_max, x_min:x_max]
+        width = x_max - x_min
+        height = y_max - y_min
+        ratio = calculate_ratio(width,height)
+        new_width = int(model_height*ratio)
+        if new_width == 0:
+            pass
+        else:
+            crop_img,ratio = compute_ratio_and_resize(crop_img,width,height,model_height)
+            image_list.append( ( [[x_min,y_min],[x_max,y_min],[x_max,y_max],[x_min,y_max]] ,crop_img) )
+            max_ratio_hori = max(ratio, max_ratio_hori)
+
+    max_ratio_hori = math.ceil(max_ratio_hori)
+    max_width = math.ceil(max_ratio_hori)*model_height
+
+    if sort_output:
+        image_list = sorted(image_list, key=lambda item: item[0][0][1]) # sort by vertical position
+    return image_list, max_width

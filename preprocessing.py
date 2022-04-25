@@ -88,6 +88,7 @@ def imageProcesser(imagePath):
     # convert image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
+
     # apply gaussian blur
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
 
