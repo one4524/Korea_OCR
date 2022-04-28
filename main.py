@@ -12,6 +12,7 @@ from easyocr.utils import calculate_ratio, compute_ratio_and_resize
 from preprocessing import imageProcesser
 from recognition import recognition
 from detection import get_detector, get_textbox, get_textbox2
+from find_string import find_sum_n_date
 
 
 def str2bool(v):
@@ -72,7 +73,6 @@ if __name__ == '__main__':
     ###########################
 
     # main
-    text_boxs = []
 
     # image preprocesssing
     images = imageProcesser(opt.original_image)
@@ -89,6 +89,10 @@ if __name__ == '__main__':
         # text recognition
         text = recognition(opt, crop_images, box)
 
+        # find sum & date
+        find_sum_n_date(text_boxs, text)
+
+        """
         date = ""
         num = 0
         str = ""
@@ -117,3 +121,4 @@ if __name__ == '__main__':
             line.clear()
             str = ""
             price = ""
+        """
