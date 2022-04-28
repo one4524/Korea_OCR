@@ -79,27 +79,24 @@ def imageProcesser(imagePath):
 
     # load the image
     image = cv2.imread(imagePath)
-    ratio = image.shape[0] / 500.0
+    #h, w, c = image.shape
+    ratio = image.shape[0] / 500
     orig = image.copy()
     image = imutils.resize(image, height=500)
+    h, w, c = image.shape
 
-    return image
+    # 한 줄씩 하고 싶을 때 활성화
+    # return image
 
+    """
     # convert image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-
     # apply gaussian blur
-    gray = cv2.GaussianBlur(gray, (3, 3), 0)
+    gray = cv2.GaussianBlur(gray, (9, 9), 0)
 
     # Find edges in image using Canny algo
     edged = cv2.Canny(gray, 60, 120)
-
-    cv2.imshow("Output", imutils.resize(edged, height=650))
-
-    # Waits for a key insert to close images.
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
     # find the contours in the edged image, keeping only the
     # largest ones, and initialize the screen contour
@@ -110,28 +107,30 @@ def imageProcesser(imagePath):
     screenCnt = []
     arr = []
     # loop over the contours
-    for c in cnts:
-        # approximate the contour
-        peri = cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+    if len(cnts) == 0:
+        screenCnt.append([0, 0])
+        screenCnt.append([w, 0])
+        screenCnt.append([w, h])
+        screenCnt.append([0, h])
+        screenCnt = np.array(screenCnt)
 
-        # if our approximated contour has four points, then we
-        # can assume that we have found our screen
-        if len(approx) == 4:
-            screenCnt = approx
-            print("4")
-            break
-        else:
-            print(len(approx))
-            for i in range(0, len(approx)):
-                arr.append((np.array(approx[i][0])))
+    else:
+        for c in cnts:
+            # approximate the contour
+            peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
 
+            # if our approximated contour has four points, then we
+            # can assume that we have found our screen
+            if len(approx) == 4:
+                screenCnt = approx
+                print("approx = 4")
+                break
+            else:
+                for i in range(0, len(approx)):
+                    arr.append((np.array(approx[i][0])))
 
-    if len(screenCnt) == 4:
-        # show the contour (outline) of the piece of paper
-        cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 2)
-
-    if len(arr) != 0:
+    if len(arr) != 0 and len(approx) != 4 and len(cnts) != 0:
         min_x, max_x, min_y, max_y = 1000, 0, 1000, 0
 
         for a in arr:
@@ -152,13 +151,20 @@ def imageProcesser(imagePath):
 
     print(screenCnt)
 
+    if len(screenCnt) == 4:
+        # show the contour (outline) of the piece of paper
+        cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 2)
+
     # apply the four point transform to obtain a top-down
     # view of the original image
     warped = four_point_transform(orig, screenCnt.reshape(4, 2) * ratio)
 
     cv2.imwrite('./data/test.jpg', warped)
 
-    return warped
+    image_crop = warped.copy()
+    """
+    warped = orig
+    cv2.imwrite('./data/test.jpg', warped)
 
     # convert the warped image to grayscale, then threshold it
     # to give it that 'black and white' paper effect
@@ -168,27 +174,69 @@ def imageProcesser(imagePath):
     gray = cv2.erode(warped, kernel, iterations=2)
     gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
 
+    # 한 줄씩 추출
+    g_h, g_w = gray.shape
+    white = []
+    black = []
+    for y in range(0, g_h):
+        key = 0
+        for x in range(0, g_w):
+            if gray[y, x] < 200:
+                black.append(y)
+                key = 1
+                break
+
+        if key == 0:
+            white.append(y)
+
+    # print("텍스트 없는 y줄 =", white)
+
+    pre = 0
+    if g_h > 1500:
+        tum = 10
+    elif g_h > 1000:
+        tum = 7
+    elif g_h > 500:
+        tum = 4
+    else:
+        tum = 2
+
+    box_line = []
+    box = []
+    for i in white:
+        cv2.line(gray, (0, i), (g_w, i), (0, 0, 0), 3)
+        if i - pre > tum:
+            print(i)
+            box_line.append(pre + 1)
+            box_line.append(i - 1)
+            box.append(box_line.copy())
+        box_line.clear()
+
+        pre = i
+
+        if i == white[-1] and g_h - i > tum:
+            box_line.append(i + 1)
+            box_line.append(g_h-1)
+            box.append(box_line.copy())
+
+
+
+    print("box\n", box)
+
+    lines = []
+    for i, b in enumerate(box):
+        crop_line = orig[b[0]:b[1], 0:g_w]
+        filename2 = "./crop_line/{}.png".format(i)
+        cv2.imwrite(filename2, crop_line)
+        lines.append(crop_line)
+
     # write the grayscale image to disk as a temporary file so we can
     # apply OCR to it
 
-    filename = "{}.png".format(os.getpid())
-    cv2.imwrite(filename, gray)
+    cv2.imwrite('./data/test2.jpg', gray)
 
-    cv2.imwrite('./data/test.jpg', gray)
-
-    # show the output images
-    cv2.imshow("Original", imutils.resize(orig, height=650))
-    cv2.imshow("Output", imutils.resize(gray, height=650))
-
-    # Waits for a key insert to close images.
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-    return gray
+    # return gray
+    return lines
 
 # https://github.com/muratlutfigoncu/receipt-reader 참고
 # https://medium.com/cashify-engineering/improve-accuracy-of-ocr-using-image-preprocessing-8df29ec3a033 참고
-
-
-# filename = imageProcesser("test.jpg")
-# print(filename)

@@ -1,13 +1,14 @@
 # This Python file uses the following encoding: utf-8
+import math
 import string
 import argparse
+import re
 
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
 import torch.utils.data
-import file_utils
-
+from easyocr.utils import calculate_ratio, compute_ratio_and_resize
 from preprocessing import imageProcesser
 from recognition import recognition
 from detection import get_detector, get_textbox, get_textbox2
@@ -74,75 +75,45 @@ if __name__ == '__main__':
     text_boxs = []
 
     # image preprocesssing
-    image, gray = imageProcesser(opt.original_image)
+    images = imageProcesser(opt.original_image)
 
     # detector model
     detector = get_detector(opt.trained_model)
 
-    # get image
-    # image_list, _, _ = file_utils.get_files(opt.folder) # 폴더에서 이미지 리스트 가져오는 방법
+    for image in images:
+        # get text boxs
+        text_boxs, crop_images, box = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text,
+                                                  opt.cuda, opt.poly,
+                                                  None)
 
-    # get text boxs
-    text_boxs, crop_images = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text, opt.cuda, opt.poly,
-                            None)
+        # text recognition
+        text = recognition(opt, crop_images, box)
 
-    image_list, max_width = get_image_list(text_boxs, gray, model_height=64)
-
-    # text recognition
-    text = recognition(opt, crop_images)
-
-    date = ""
-    price = ""
-    num = 0
-    str = ""
-    sum_text = ['금액', '합계','함계','함게','합게','압계','압게','암계','암게','힙켸','입켸','입케','힙케']
-    for i, text_line in enumerate(text_boxs):
-        line = []
-
-        for j, t in enumerate(text_line):
-
-            line.append(text[num])
-            str += text[num]
-            num += 1
-
-        print(i + 1, "줄 텍스트 : ", str)
-        str = str.strip().strip(':').strip(',').strip('.')
-        for sum in sum_text:
-            if str.find(sum) != -1:
-                str = str.strip(sum).strip('원')
-                price = str
-
-        print(price)
-        line.clear()
+        date = ""
+        num = 0
         str = ""
+        str_num = []
+        price = ""
+        sum_text = ['금액', '합계', '함계', '함게', '합게', '압계', '압게', '암계', '암게', '힙켸', '입켸', '입케', '힙케']
+        for i, text_line in enumerate(text_boxs):
+            line = []
 
+            for j, t in enumerate(text_line):
+                line.append(text[num])
+                str += text[num]
+                num += 1
 
-def get_image_list(horizontal_list, img, model_height = 64, sort_output = True):
-    image_list = []
-    maximum_y,maximum_x = img.shape
+            str = str.replace("o", '0')
+            str = str.replace("O", '0')
 
-    max_ratio_hori, max_ratio_free = 1,1
+            print(i + 1, "줄 텍스트 : ", str)
+            for sum in sum_text:
+                if str.find(sum) != -1:
+                    str_num = re.findall("\d+", str)
 
-    for box in horizontal_list:
-        x_min = max(0,box[0])
-        x_max = min(box[1],maximum_x)
-        y_min = max(0,box[2])
-        y_max = min(box[3],maximum_y)
-        crop_img = img[y_min : y_max, x_min:x_max]
-        width = x_max - x_min
-        height = y_max - y_min
-        ratio = calculate_ratio(width,height)
-        new_width = int(model_height*ratio)
-        if new_width == 0:
-            pass
-        else:
-            crop_img,ratio = compute_ratio_and_resize(crop_img,width,height,model_height)
-            image_list.append( ( [[x_min,y_min],[x_max,y_min],[x_max,y_max],[x_min,y_max]] ,crop_img) )
-            max_ratio_hori = max(ratio, max_ratio_hori)
-
-    max_ratio_hori = math.ceil(max_ratio_hori)
-    max_width = math.ceil(max_ratio_hori)*model_height
-
-    if sort_output:
-        image_list = sorted(image_list, key=lambda item: item[0][0][1]) # sort by vertical position
-    return image_list, max_width
+            for n in str_num:
+                price += n
+            print("합계 : ", price)
+            line.clear()
+            str = ""
+            price = ""

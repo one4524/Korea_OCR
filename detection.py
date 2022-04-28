@@ -109,8 +109,11 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
                 refine_net=None):
     result = []
     crop_images = []
+    crop_box = []
     # image = imgproc.loadImage(image)
     line = []
+    tmp = []
+    key = 0
 
     w, h = 200, 64
 
@@ -128,15 +131,19 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
         img_h = max_y - min_y
         img_w = max_x - min_x
 
+
+        # print("result=", result)
+        # print("line=", line)
+
         if len(line) == 0:
             line.append(poly)
-            print("0", poly)
+           # print("line-0", poly)
 
             continue
         else:
             if line[0][1] - img_h / 2 < poly[1] < line[0][1] + img_h / 2:
 
-                print("a", poly)
+                # print("line-a", poly)
 
                 j = 0
                 n = len(line)
@@ -147,28 +154,29 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
                     else:
                         j += 1
 
-                print("i=", j, "n=", n)
+                # print("i=", j, "n=", n)
                 if j == n:
                     line.append(poly)
                 else:
                     for a in range(n-1, j-1, -1):
-                        print("len(n)=", len(line))
-                        print("a", a)
+                        # print("len(n)=", len(line))
+                        # print("a", a)
                         line.insert(a+1, line[a])
                         line[a] = poly
-                        print("len(n)=", len(line))
+                        # print("len(n)=", len(line))
 
             else:
-                print("else")
-                result.append(line)
+                tmp = line.copy()
+                result.append(tmp)
+                # print("else")
                 line.clear()
                 line.append(poly)
 
         if i == len(polys)-1:
-            print("end")
+            # print("end")
             result.append(line)
 
-    print(result)
+    # print(result)
     i=0
     for lines in result:
         for b in lines:
@@ -180,10 +188,11 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
 
             gray = cv2.cvtColor(img_trim, cv2.COLOR_BGR2GRAY)
             crop_images.append(gray)
+            crop_box.append(poly2)
             cv2.imwrite('./image/{}.jpg'.format(str(i)), img_trim)
             i += 1
 
-    return result, crop_images
+    return result, crop_images, crop_box
 
 
 def get_textbox2(detector, image, text_threshold=0.7, link_threshold=0.4, low_text=0.4, cuda=True, poly=False,
