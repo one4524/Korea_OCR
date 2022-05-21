@@ -206,7 +206,7 @@ def imageProcesser(imagePath):
     for i in white:
         cv2.line(gray, (0, i), (g_w, i), (0, 0, 0), 3)
         if i - pre > tum:
-            print(i)
+            # print(i)
             box_line.append(pre + 1)
             box_line.append(i - 1)
             box.append(box_line.copy())
@@ -219,9 +219,7 @@ def imageProcesser(imagePath):
             box_line.append(g_h-1)
             box.append(box_line.copy())
 
-
-
-    print("box\n", box)
+    print("box", box)
 
     lines = []
     for i, b in enumerate(box):

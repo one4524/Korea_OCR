@@ -3,7 +3,8 @@ import datetime
 
 
 def find_sum_n_date(text_boxs, text):
-    date = ""
+    price = ""
+    date_main = ""
     str = ""
     for i, text_line in enumerate(text_boxs):
         line = []
@@ -25,6 +26,7 @@ def find_sum_n_date(text_boxs, text):
             print("합계 없음")
 
         date_bool, date = is_data(str)
+        date_main = date
 
         if date_bool:
             print("날짜 : ", date)
@@ -33,6 +35,8 @@ def find_sum_n_date(text_boxs, text):
 
         line.clear()
         str = ""
+
+    return price, date_main
 
 
 # 영문자o,O -> 숫자 0 으로 변환
@@ -63,7 +67,6 @@ def is_price(str):
 def is_data(str):
     date_text = ['판매', '거래', '승인', '일자', '발행']
     bool = False
-
     str = re.sub('[년연넌언월원운언/.,-]', "-", str)  # 하이픈으로 변환
 
     date_type= [r'\d{4}-\d{1,2}-\d{2}', r'\d{2}-\d{1,2}-\d{2}', r'\d{4}\d{1,2}-\d{2}', r'\d{4}-\d{1,2}\d{2}',
@@ -71,12 +74,11 @@ def is_data(str):
 
     for dt in date_type:
 
-        list = re.findall(dt, str)  # 0000/00/00 년도가 4개인 것 확인( : 고려x)
+        date = re.findall(dt, str)  # 0000/00/00 년도가 4개인 것 확인( : 고려x)
 
-        if len(list) != 0:
+        if len(date) != 0:
             bool = True
+            # result = '20' + list[0] if len(list[0]) == 8 else list[0]  # 00-00-00 -> 2000-00-00
             break
 
-    result = '20' + list[0] if len(list[0]) == 8 else list[0]  # 00-00-00 -> 2000-00-00
-
-    return bool, datetime.datetime.strptime(result, '%Y-%m-%d')  # 리턴 형태 : datetime
+    return bool, date  # datetime.datetime.strptime(result, '%Y-%m-%d')  # 리턴 형태 : datetime
