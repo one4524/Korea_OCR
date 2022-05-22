@@ -19,7 +19,7 @@ def str2bool(v):
     return v.lower() in ("yes", "y", "true", "t", "1")
 
 
-def main(img):
+def main_ocr(img):
     parser = argparse.ArgumentParser()
     parser.add_argument('--image_folder', default='image', help='path to image_folder which contains text images')
     parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
@@ -77,27 +77,45 @@ def main(img):
     price = 0
     date = ""
 
-    # image preprocesssing
+    # image preprocessing
     images = imageProcesser(opt.original_image)
+
+    print("1단계 - preprocess")
 
     # detector model
     detector = get_detector(opt.trained_model)
 
     for image in images:
+        print("-----------------------------------------------------------------------------------")
         # get text boxs
         text_boxs, crop_images, box = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text,
                                                   opt.cuda, opt.poly,
                                                   None)
 
+        print("2단계 - get boxs")
+
         # text recognition
         text = recognition(opt, crop_images, box)
+
+        print("3단계 - text")
 
         # find sum & date
         p, d = find_sum_n_date(text_boxs, text)
 
-        if price < int(p):
-            price = int(p)
+        if p == '':
+            p = 0
+        else:
+            if price < int(p):
+                price = int(p)
 
-        date = d
+        print("len(d) = ", len(d))
+        if len(d) > 8:
+            date = d
+        else:
+            date = "00000000"
+
+
+    if date == "":
+        date = "00000000"
 
     return price, date

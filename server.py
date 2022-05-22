@@ -1,14 +1,18 @@
 import socket
 import time
-from main_ocr import main
 
-host = 'localhost'  # Symbolic name meaning all available interfaces
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
+from main_ocr import main_ocr
+
+host = '192.168.0.10'  # Symbolic name meaning all available interfaces
 port = 7070  # Arbitrary non-privileged port
 
 server_sock = socket.socket(socket.AF_INET)
 server_sock.bind((host, port))
 server_sock.listen(1)
-
 
 print("기다리는 중")
 
@@ -51,8 +55,11 @@ while True:
 
     print("img is saved")
 
-    price, date = main("res_image.jpg")
+    price, date = main_ocr("res_image.jpg")
 
-    data = "admin,매장,"+str(price)+date[0:5]+","+date[5:7]+","+date[7:9]
+    print("price === ", price)
+    print('date === ', date)
+
+    data = "admin,매장," + str(price) + "," + date[0:4] + "," + date[4:6] + "," + date[6:8]
+    # print(date[0:4] + ",")
     write_utf8(data, client_sock)
-

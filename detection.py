@@ -112,8 +112,6 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
     crop_box = []
     # image = imgproc.loadImage(image)
     line = []
-    tmp = []
-    key = 0
 
     w, h = 200, 64
 
@@ -131,13 +129,12 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
         img_h = max_y - min_y
         img_w = max_x - min_x
 
-
         # print("result=", result)
         # print("line=", line)
 
         if len(line) == 0:
             line.append(poly)
-           # print("line-0", poly)
+            # print("line-0", poly)
 
             continue
         else:
@@ -158,10 +155,10 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
                 if j == n:
                     line.append(poly)
                 else:
-                    for a in range(n-1, j-1, -1):
+                    for a in range(n - 1, j - 1, -1):
                         # print("len(n)=", len(line))
                         # print("a", a)
-                        line.insert(a+1, line[a])
+                        line.insert(a + 1, line[a])
                         line[a] = poly
                         # print("len(n)=", len(line))
 
@@ -172,12 +169,12 @@ def get_textbox(detector, image, text_threshold=0.7, link_threshold=0.4, low_tex
                 line.clear()
                 line.append(poly)
 
-        if i == len(polys)-1:
+        if i == len(polys) - 1:
             # print("end")
             result.append(line)
 
     # print(result)
-    i=0
+    i = 0
     for lines in result:
         for b in lines:
             poly2 = np.array([[b[0], b[1]], [b[2], b[3]], [b[4], b[5]], [b[6], b[7]]],

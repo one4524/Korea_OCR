@@ -88,7 +88,7 @@ def imageProcesser(imagePath):
     # 한 줄씩 하고 싶을 때 활성화
     # return image
 
-    """
+
     # convert image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -153,7 +153,7 @@ def imageProcesser(imagePath):
 
     if len(screenCnt) == 4:
         # show the contour (outline) of the piece of paper
-        cv2.drawContours(image, [screenCnt], -1, (0, 255, 0), 2)
+        cv2.drawContours(orig, [screenCnt], -1, (0, 255, 0), 2)
 
     # apply the four point transform to obtain a top-down
     # view of the original image
@@ -162,13 +162,13 @@ def imageProcesser(imagePath):
     cv2.imwrite('./data/test.jpg', warped)
 
     image_crop = warped.copy()
-    """
-    warped = orig
-    cv2.imwrite('./data/test.jpg', warped)
+
+    # warped = orig
+    # cv2.imwrite('./data/test.jpg', warped)
 
     # convert the warped image to grayscale, then threshold it
     # to give it that 'black and white' paper effect
-    warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+    warped = cv2.cvtColor(image_crop, cv2.COLOR_BGR2GRAY)
     T = threshold_local(warped, 191, offset=20, method="gaussian")
     warped = (warped > T).astype("uint8") * 255
     gray = cv2.erode(warped, kernel, iterations=2)
@@ -180,8 +180,12 @@ def imageProcesser(imagePath):
     black = []
     for y in range(0, g_h):
         key = 0
+        check_num = 0
         for x in range(0, g_w):
             if gray[y, x] < 200:
+                check_num += 1
+
+            if check_num >= int(g_w/30):
                 black.append(y)
                 key = 1
                 break
@@ -223,7 +227,7 @@ def imageProcesser(imagePath):
 
     lines = []
     for i, b in enumerate(box):
-        crop_line = orig[b[0]:b[1], 0:g_w]
+        crop_line = image_crop[b[0]:b[1], 0:g_w]
         filename2 = "./crop_line/{}.png".format(i)
         cv2.imwrite(filename2, crop_line)
         lines.append(crop_line)
