@@ -19,7 +19,7 @@ def str2bool(v):
     return v.lower() in ("yes", "y", "true", "t", "1")
 
 
-if __name__ == '__main__':
+def main_ocr(img):
     parser = argparse.ArgumentParser()
     parser.add_argument('--image_folder', default='image', help='path to image_folder which contains text images')
     parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     parser.add_argument('--refine', default=False, action='store_true', help='enable link refiner')
     parser.add_argument('--refiner_model', default='weights/craft_refiner_CTW1500.pth', type=str,
                         help='pretrained refiner model')
-    parser.add_argument('--original_image', required=True, type=str, help='input image')
+    parser.add_argument('--original_image', default=img, type=str, help='input image')
 
     opt = parser.parse_args()
 
@@ -74,51 +74,46 @@ if __name__ == '__main__':
 
     # main
 
-    # image preprocesssing
+    price = 0
+    date = ""
+
+    # image preprocessing
     images = imageProcesser(opt.original_image)
+
+    print("1단계 - preprocess")
 
     # detector model
     detector = get_detector(opt.trained_model)
 
     for image in images:
+        print("-----------------------------------------------------------------------------------")
         # get text boxs
+        print("2단계 - get boxs")
         text_boxs, crop_images, box = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text,
                                                   opt.cuda, opt.poly,
                                                   None)
 
+        print("3단계 - text")
         # text recognition
         text = recognition(opt, crop_images, box)
 
+        print("4단계 - find price, date")
         # find sum & date
-        find_sum_n_date(text_boxs, text)
+        p, d = find_sum_n_date(text_boxs, text)
 
-        """
-        date = ""
-        num = 0
-        str = ""
-        str_num = []
-        price = ""
-        sum_text = ['금액', '합계', '함계', '함게', '합게', '압계', '압게', '암계', '암게', '힙켸', '입켸', '입케', '힙케']
-        for i, text_line in enumerate(text_boxs):
-            line = []
+        if p == '':
+            p = 0
+        else:
+            if price < int(p):
+                price = int(p)
 
-            for j, t in enumerate(text_line):
-                line.append(text[num])
-                str += text[num]
-                num += 1
+        print("len(d) = ", len(d))
+        if len(d) > 8:
+            date = d
+        else:
+            date = "00000000"
 
-            str = str.replace("o", '0')
-            str = str.replace("O", '0')
+    if date == "":
+        date = "00000000"
 
-            print(i + 1, "줄 텍스트 : ", str)
-            for sum in sum_text:
-                if str.find(sum) != -1:
-                    str_num = re.findall("\d+", str)
-
-            for n in str_num:
-                price += n
-            print("합계 : ", price)
-            line.clear()
-            str = ""
-            price = ""
-        """
+    return price, date
