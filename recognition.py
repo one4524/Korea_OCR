@@ -76,6 +76,7 @@ def get_image_list(free_list, img, model_height = 64, sort_output = True):
     return image_list, max_width
 """
 
+
 def recognition(opt, image_list, box):
     """ model configuration """
     if 'CTC' in opt.Prediction:

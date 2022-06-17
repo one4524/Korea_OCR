@@ -7,7 +7,10 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 from main_ocr import main_ocr
 
-host = '192.168.0.10'  # Symbolic name meaning all available interfaces
+# host = '192.168.0.10'  # Symbolic name meaning all available interfaces
+# host = '223.194.134.169'  # Symbolic name meaning all available interfaces
+host = '223.194.131.13'
+
 port = 7070  # Arbitrary non-privileged port
 
 server_sock = socket.socket(socket.AF_INET)
@@ -61,5 +64,4 @@ while True:
     print('date === ', date)
 
     data = "admin,매장," + str(price) + "," + date[0:4] + "," + date[4:6] + "," + date[6:8]
-    # print(date[0:4] + ",")
     write_utf8(data, client_sock)

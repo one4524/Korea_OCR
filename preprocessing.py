@@ -185,7 +185,7 @@ def imageProcesser(imagePath):
             if gray[y, x] < 200:
                 check_num += 1
 
-            if check_num >= int(g_w/30):
+            if check_num >= int(g_w/35):
                 black.append(y)
                 key = 1
                 break
@@ -200,10 +200,10 @@ def imageProcesser(imagePath):
         tum = 10
     elif g_h > 1000:
         tum = 7
-    elif g_h > 500:
+    elif g_h >= 500:
         tum = 4
     else:
-        tum = 2
+        tum = 3
 
     box_line = []
     box = []
@@ -228,7 +228,7 @@ def imageProcesser(imagePath):
     lines = []
     for i, b in enumerate(box):
         crop_line = image_crop[b[0]:b[1], 0:g_w]
-        filename2 = "./crop_line/{}.png".format(i)
+        filename2 = "./crop_line/2-{}.png".format(i)
         cv2.imwrite(filename2, crop_line)
         lines.append(crop_line)
 

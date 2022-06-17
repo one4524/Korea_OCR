@@ -85,19 +85,20 @@ def main_ocr(img):
     # detector model
     detector = get_detector(opt.trained_model)
 
-    for image in images:
+    for i, image in enumerate(images):
         print("-----------------------------------------------------------------------------------")
+        print("2단계 - get boxs")
         # get text boxs
-        text_boxs, crop_images, box = get_textbox(detector, image, opt.text_threshold, opt.link_threshold, opt.low_text,
+        text_boxs, crop_images, box = get_textbox(detector, i, image, opt.text_threshold, opt.link_threshold,
+                                                  opt.low_text,
                                                   opt.cuda, opt.poly,
                                                   None)
 
-        print("2단계 - get boxs")
-
+        print("3단계 - text")
         # text recognition
         text = recognition(opt, crop_images, box)
 
-        print("3단계 - text")
+        print("4단계 - find price, date")
 
         # find sum & date
         p, d = find_sum_n_date(text_boxs, text)
@@ -108,14 +109,14 @@ def main_ocr(img):
             if price < int(p):
                 price = int(p)
 
-        print("len(d) = ", len(d))
-        if len(d) > 8:
-            date = d
-        else:
-            date = "00000000"
+        # print("len(d) = ", len(d))
+        # print("d = ", d)
+        if date == "":
+            if len(d) == 8 and d[0:2] == "20":
+                date = d
+        # print("date = ", date)
 
-
-    if date == "":
+    if date == "" or len(date) != 8:
         date = "00000000"
 
     return price, date
