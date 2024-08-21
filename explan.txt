@@ -1,0 +1,19 @@
+작동 순서
+
+1. sever.py 에서 socket 을 열고 이용자에게 영수증 이미지를 받는다.
+
+2. main_ocr.py 에서 받은 영수증 이미지에서 가격과 날짜를 추출한다.
+
+ 1) 전처리 - preprocessing.py의 imageProcesser함수에서 이미지 중
+  영수증 영역만 추출하고 텍스트를 한 줄씩 구분하여 Crop한다.
+
+ 2) 텍스트 영역 검출 모델 할당 - CRAFT 모델을 detection.py의 get_detector 함수에서 할당한다.
+
+ 3) Crop한 텍스트 라인 이미지들을 하나씩 입력하여 텍스트가 존재하는 영역을 검출한다.
+  이때, detection.py의 get_textbox에서 CRAFT 모델을 이용한 검출하는 기능을 수행한다.
+
+ 4) 3단계에서 검출한 텍스트 영역들을 recognition.py의 recognition 함수에서 실제 텍스트로 추출한다.
+
+ 5) 4단계에서 추출한 텍스트들 중에서 find_string.py의 find_sum_n_date 함수에서 합계 가격과 날짜를 추출한다.
+
+3. sever.py에서 이용자에게 추출한 합계 가격과 날짜를 보낸다.

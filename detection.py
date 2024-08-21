@@ -86,7 +86,7 @@ def craft_net(net, image, text_threshold, link_threshold, low_text, cuda, poly, 
     return boxes, polys
 
 
-def get_detector(trained_model, cuda=True):
+def get_detector(trained_model, cuda=False):
     # load net
     net = CRAFT()  # initialize
 

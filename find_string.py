@@ -58,7 +58,7 @@ def is_price(str):
 
     for sum in sum_text:
         if str.find(sum) != -1:
-            str_num = re.findall("\d+", str)
+            str_num = re.findall("\\d+", str)
             bool = True
 
     return bool, str_num

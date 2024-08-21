@@ -1,17 +1,12 @@
 # This Python file uses the following encoding: utf-8
-import math
 import string
 import argparse
-import re
-
-import cv2
 import torch
 import torch.backends.cudnn as cudnn
 import torch.utils.data
-from easyocr.utils import calculate_ratio, compute_ratio_and_resize
 from preprocessing import imageProcesser
 from recognition import recognition
-from detection import get_detector, get_textbox, get_textbox2
+from detection import get_detector, get_textbox
 from find_string import find_sum_n_date
 
 
@@ -48,7 +43,7 @@ def main_ocr(img):
     parser.add_argument('--text_threshold', default=0.7, type=float, help='text confidence threshold')
     parser.add_argument('--low_text', default=0.4, type=float, help='text low-bound score')
     parser.add_argument('--link_threshold', default=0.4, type=float, help='link confidence threshold')
-    parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda for inference')
+    parser.add_argument('--cuda', default=False, type=str2bool, help='Use cuda for inference')
     parser.add_argument('--canvas_size', default=1280, type=int, help='image size for inference')
     parser.add_argument('--mag_ratio', default=1.5, type=float, help='image magnification ratio')
     parser.add_argument('--poly', default=False, action='store_true', help='enable polygon type')
@@ -83,13 +78,13 @@ def main_ocr(img):
     print("1단계 - preprocess")
 
     # detector model
-    detector = get_detector(opt.trained_model)
+    detector = get_detector(opt.trained_model, opt.cuda)
 
     for i, image in enumerate(images):
         print("-----------------------------------------------------------------------------------")
         print("2단계 - get boxs")
         # get text boxs
-        text_boxs, crop_images, box = get_textbox(detector, i, image, opt.text_threshold, opt.link_threshold,
+        text_boxs, crop_images, box = get_textbox(detector, image, opt.text_threshold, opt.link_threshold,
                                                   opt.low_text,
                                                   opt.cuda, opt.poly,
                                                   None)

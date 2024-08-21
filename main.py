@@ -8,7 +8,6 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 import torch.utils.data
-from easyocr.utils import calculate_ratio, compute_ratio_and_resize
 from preprocessing import imageProcesser
 from recognition import recognition
 from detection import get_detector, get_textbox, get_textbox2

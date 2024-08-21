@@ -1,7 +1,3 @@
-import tempfile
-from skimage.filters import threshold_local
-from PIL import Image
-import pytesseract
 import numpy as np
 import os
 import imutils

@@ -9,7 +9,7 @@ from main_ocr import main_ocr
 
 # host = '192.168.0.10'  # Symbolic name meaning all available interfaces
 # host = '223.194.134.169'  # Symbolic name meaning all available interfaces
-host = '223.194.131.13'
+host = '192.168.0.10'
 
 port = 7070  # Arbitrary non-privileged port
 
@@ -59,7 +59,6 @@ while True:
     print("img is saved")
 
     price, date = main_ocr("res_image.jpg")
-
     print("price === ", price)
     print('date === ', date)
 
